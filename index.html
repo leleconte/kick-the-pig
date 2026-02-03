@@ -36,7 +36,6 @@
         .locked { filter: grayscale(1) opacity(0.4); }
         .active-weapon { border-color: var(--accent) !important; background: rgba(255,0,60,0.3) !important; }
         
-        /* RIMOZIONE CURSORE BRUTTO */
         canvas { cursor: none !important; touch-action: none; }
         
         #shop-menu { background: rgba(0,0,0,0.95); backdrop-filter: blur(15px); transition: 0.4s; z-index: 60; }
@@ -109,30 +108,26 @@
         let gameActive = false;
         let shopOpen = false;
         let isDragging = false;
+        let mouseDownTime = 0;
         let hits = [];
         let mouse = { x: 0, y: 0 };
 
         const weapons = {
-            punch: { power: 25, gain: 10, owned: true, icon: '👊' },
-            knife: { power: 15, gain: 30, owned: false, price: 500, icon: '🔪' },
-            ak47: { power: 10, gain: 60, owned: false, price: 2500, icon: '🔥' },
-            bomb: { power: 80, gain: 500, owned: false, price: 10000, icon: '💥' }
+            punch: { power: 30, gain: 10, owned: true, icon: '👊' },
+            knife: { power: 20, gain: 30, owned: false, price: 500, icon: '🔪' },
+            ak47: { power: 15, gain: 60, owned: false, price: 2500, icon: '🔥' },
+            bomb: { power: 100, gain: 500, owned: false, price: 10000, icon: '💥' }
         };
 
         let buddy = { x: 0, y: 0, vx: 0, vy: 0, rotation: 0, rv: 0, r: 60 };
 
-        // LOGIN E PERSISTENZA
         function handleLogin() {
             const input = document.getElementById('username-input').value.trim().toUpperCase();
             if (!input) return alert("Inserisci un Username!");
-            
             currentUser = input;
             const savedData = JSON.parse(localStorage.getItem(`KTP_${currentUser}`)) || { score: 0, owned: ['punch'] };
-            
             score = savedData.score;
             document.getElementById('score').innerText = `€ ${score}`;
-            
-            // Ripristina armi
             for (let w in weapons) {
                 if (savedData.owned.includes(w)) {
                     weapons[w].owned = true;
@@ -143,7 +138,6 @@
                     }
                 }
             }
-
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('home-screen').style.display = 'flex';
             document.getElementById('current-user-display').innerText = currentUser;
@@ -194,7 +188,7 @@
             ctx.save();
             ctx.translate(buddy.x, buddy.y);
             ctx.rotate(buddy.rotation);
-            ctx.shadowBlur = 20; ctx.shadowColor = "rgba(255,255,255,0.1)";
+            ctx.shadowBlur = 15; ctx.shadowColor = "rgba(255,255,255,0.1)";
 
             // Tunica
             ctx.fillStyle = "white";
@@ -206,7 +200,7 @@
             ctx.fillStyle = "#ffdbac";
             ctx.fill();
 
-            // CANNA
+            // --- CANNA IN BOCCA ---
             ctx.strokeStyle = "#fff";
             ctx.lineWidth = 3;
             ctx.beginPath(); ctx.moveTo(5, -55); ctx.lineTo(20, -52); ctx.stroke();
@@ -226,22 +220,19 @@
             ctx.restore();
         }
 
-        // DISEGNA IL MIRINO PERSONALIZZATO
         function drawCursor() {
-            ctx.strokeStyle = "red";
+            ctx.strokeStyle = "rgba(255, 0, 0, 0.8)";
             ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(mouse.x, mouse.y, 10, 0, Math.PI*2);
-            ctx.moveTo(mouse.x - 15, mouse.y); ctx.lineTo(mouse.x + 15, mouse.y);
-            ctx.moveTo(mouse.x, mouse.y - 15); ctx.lineTo(mouse.x, mouse.y + 15);
-            ctx.stroke();
+            ctx.beginPath(); ctx.arc(mouse.x, mouse.y, 12, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(mouse.x - 20, mouse.y); ctx.lineTo(mouse.x + 20, mouse.y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(mouse.x, mouse.y - 20); ctx.lineTo(mouse.x, mouse.y + 20); ctx.stroke();
+            ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(mouse.x, mouse.y, 2, 0, Math.PI*2); ctx.fill();
         }
 
         function update() {
             if (!gameActive) return;
-
             if (!isDragging) {
-                buddy.vy += 0.9; // Gravità
+                buddy.vy += 0.9;
                 buddy.x += buddy.vx;
                 buddy.y += buddy.vy;
                 buddy.rotation += buddy.rv;
@@ -250,11 +241,9 @@
                 buddy.vy *= 0.99;
                 buddy.rv *= 0.98;
 
-                // Rimbalzi
                 if (buddy.y > canvas.height - 80) {
                     buddy.y = canvas.height - 80;
                     buddy.vy *= -0.6;
-                    buddy.rv += buddy.vx * 0.01;
                 }
                 if (buddy.x < 50 || buddy.x > canvas.width - 50) {
                     buddy.vx *= -0.7;
@@ -264,16 +253,15 @@
         }
 
         function animate() {
-            // SFONDO CARINO (CYBER RADIAL)
+            // SFONDO MIGLIORATO (CYBER RADIAL + GRID)
             let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width);
-            grad.addColorStop(0, "#0f0514");
+            grad.addColorStop(0, "#1a0510");
             grad.addColorStop(0.5, "#050505");
             grad.addColorStop(1, "#000000");
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Griglia definita
-            ctx.strokeStyle = "rgba(255, 0, 60, 0.1)";
+            ctx.strokeStyle = "rgba(255, 0, 60, 0.15)";
             ctx.lineWidth = 1;
             for(let i=0; i<canvas.width; i+=100) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke(); }
             for(let i=0; i<canvas.height; i+=100) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke(); }
@@ -283,7 +271,7 @@
             
             hits.forEach((hit, i) => {
                 ctx.globalAlpha = hit.life;
-                ctx.font = hit.size + "px Inter";
+                ctx.font = "60px Inter";
                 ctx.fillText(hit.icon, hit.x-25, hit.y+25);
                 hit.life -= 0.05;
                 if(hit.life <= 0) hits.splice(i, 1);
@@ -294,70 +282,62 @@
             requestAnimationFrame(animate);
         }
 
-        // INPUT: DRAG & HIT
         function getPos(e) {
             const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
+            const cx = e.touches ? e.touches[0].clientX : e.clientX;
+            const cy = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: cx - rect.left, y: cy - rect.top };
         }
 
-        canvas.addEventListener('mousedown', (e) => {
+        const handleDown = (e) => {
             const pos = getPos(e);
             const dist = Math.hypot(pos.x - buddy.x, pos.y - buddy.y);
-            if (dist < 80) {
-                isDragging = true;
-                buddy.vx = 0; buddy.vy = 0;
-            }
-        });
+            mouseDownTime = Date.now();
+            if (dist < 80) isDragging = true;
+        };
 
-        window.addEventListener('mousemove', (e) => {
+        const handleMove = (e) => {
             const pos = getPos(e);
             mouse.x = pos.x; mouse.y = pos.y;
             if (isDragging) {
-                buddy.vx = (pos.x - buddy.x) * 0.5;
-                buddy.vy = (pos.y - buddy.y) * 0.5;
+                buddy.vx = (pos.x - buddy.x) * 0.4;
+                buddy.vy = (pos.y - buddy.y) * 0.4;
                 buddy.x = pos.x;
                 buddy.y = pos.y;
             }
-        });
+        };
 
-        window.addEventListener('mouseup', (e) => {
-            if (isDragging) {
+        const handleUp = (e) => {
+            const pos = getPos(e);
+            const duration = Date.now() - mouseDownTime;
+            
+            if (isDragging && duration > 150) {
                 isDragging = false;
                 saveData();
             } else {
-                const pos = getPos(e);
                 const dist = Math.hypot(pos.x - buddy.x, pos.y - buddy.y);
-                if (dist < 120) {
+                if (dist < 150) {
                     let w = weapons[currentWeapon];
                     score += w.gain;
                     document.getElementById('score').innerText = `€ ${score}`;
-                    hits.push({ x: pos.x, y: pos.y, icon: w.icon, size: 60, life: 1 });
+                    hits.push({ x: pos.x, y: pos.y, icon: w.icon, life: 1 });
                     
                     const angle = Math.atan2(buddy.y - pos.y, buddy.x - pos.x);
                     buddy.vx += Math.cos(angle) * w.power;
                     buddy.vy += Math.sin(angle) * w.power;
-                    buddy.rv = (Math.random()-0.5);
+                    buddy.rv = (Math.random()-0.5) * 2;
                     saveData();
                 }
+                isDragging = false;
             }
-        });
+        };
 
-        // Mobile support
-        canvas.addEventListener('touchstart', (e) => {
-            const pos = getPos(e);
-            const dist = Math.hypot(pos.x - buddy.x, pos.y - buddy.y);
-            if(dist < 80) isDragging = true;
-        });
-        canvas.addEventListener('touchmove', (e) => {
-            if(isDragging) {
-                const pos = getPos(e);
-                buddy.x = pos.x; buddy.y = pos.y;
-            }
-        });
-        canvas.addEventListener('touchend', () => isDragging = false);
-
+        canvas.addEventListener('mousedown', handleDown);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleUp);
+        canvas.addEventListener('touchstart', handleDown);
+        window.addEventListener('touchmove', handleMove);
+        window.addEventListener('touchend', handleUp);
         window.addEventListener('resize', resize);
     </script>
 </body>
