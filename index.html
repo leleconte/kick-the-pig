@@ -113,10 +113,10 @@
         let mouse = { x: 0, y: 0 };
 
         const weapons = {
-            punch: { power: 30, gain: 10, owned: true, icon: '👊' },
-            knife: { power: 20, gain: 30, owned: false, price: 500, icon: '🔪' },
-            ak47: { power: 15, gain: 60, owned: false, price: 2500, icon: '🔥' },
-            bomb: { power: 100, gain: 500, owned: false, price: 10000, icon: '💥' }
+            punch: { power: 25, gain: 10, owned: true, icon: '👊' },
+            knife: { power: 18, gain: 30, owned: false, price: 500, icon: '🔪' },
+            ak47: { power: 12, gain: 60, owned: false, price: 2500, icon: '🔥' },
+            bomb: { power: 90, gain: 500, owned: false, price: 10000, icon: '💥' }
         };
 
         let buddy = { x: 0, y: 0, vx: 0, vy: 0, rotation: 0, rv: 0, r: 60 };
@@ -189,34 +189,23 @@
             ctx.translate(buddy.x, buddy.y);
             ctx.rotate(buddy.rotation);
             ctx.shadowBlur = 15; ctx.shadowColor = "rgba(255,255,255,0.1)";
-
-            // Tunica
             ctx.fillStyle = "white";
             ctx.fillRect(-25, -40, 50, 80);
-
-            // Testa
             ctx.beginPath();
             ctx.arc(0, -65, 25, 0, Math.PI * 2);
             ctx.fillStyle = "#ffdbac";
             ctx.fill();
-
-            // --- CANNA IN BOCCA ---
             ctx.strokeStyle = "#fff";
             ctx.lineWidth = 3;
             ctx.beginPath(); ctx.moveTo(5, -55); ctx.lineTo(20, -52); ctx.stroke();
             ctx.fillStyle = "#ff4500";
             ctx.beginPath(); ctx.arc(22, -52, 2.5, 0, Math.PI * 2); ctx.fill();
-
-            // Capelli e Barba
             ctx.fillStyle = "#4b2c20";
             ctx.fillRect(-28, -75, 56, 12);
             ctx.fillRect(-12, -50, 24, 18);
-
-            // Aureola
             ctx.strokeStyle = "#ffd700";
             ctx.lineWidth = 3;
             ctx.beginPath(); ctx.ellipse(0, -100, 22, 6, 0, 0, Math.PI * 2); ctx.stroke();
-
             ctx.restore();
         }
 
@@ -232,28 +221,27 @@
         function update() {
             if (!gameActive) return;
             if (!isDragging) {
-                buddy.vy += 0.9;
+                buddy.vy += 0.85; // Gravità realistica
                 buddy.x += buddy.vx;
                 buddy.y += buddy.vy;
                 buddy.rotation += buddy.rv;
 
-                buddy.vx *= 0.99;
-                buddy.vy *= 0.99;
-                buddy.rv *= 0.98;
+                buddy.vx *= 0.985; // Attrito aria
+                buddy.vy *= 0.985;
+                buddy.rv *= 0.97;
 
+                // Collisioni bordi con fisica
                 if (buddy.y > canvas.height - 80) {
                     buddy.y = canvas.height - 80;
-                    buddy.vy *= -0.6;
+                    buddy.vy *= -0.55; // Rimbalzo terra
+                    buddy.rv += buddy.vx * 0.02;
                 }
-                if (buddy.x < 50 || buddy.x > canvas.width - 50) {
-                    buddy.vx *= -0.7;
-                    buddy.x = buddy.x < 50 ? 50 : canvas.width - 50;
-                }
+                if (buddy.x < 50) { buddy.x = 50; buddy.vx *= -0.6; }
+                if (buddy.x > canvas.width - 50) { buddy.x = canvas.width - 50; buddy.vx *= -0.6; }
             }
         }
 
         function animate() {
-            // SFONDO MIGLIORATO (CYBER RADIAL + GRID)
             let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width);
             grad.addColorStop(0, "#1a0510");
             grad.addColorStop(0.5, "#050505");
@@ -273,7 +261,7 @@
                 ctx.globalAlpha = hit.life;
                 ctx.font = "60px Inter";
                 ctx.fillText(hit.icon, hit.x-25, hit.y+25);
-                hit.life -= 0.05;
+                hit.life -= 0.04;
                 if(hit.life <= 0) hits.splice(i, 1);
             });
             ctx.globalAlpha = 1;
@@ -293,15 +281,15 @@
             const pos = getPos(e);
             const dist = Math.hypot(pos.x - buddy.x, pos.y - buddy.y);
             mouseDownTime = Date.now();
-            if (dist < 80) isDragging = true;
+            if (dist < 85) isDragging = true;
         };
 
         const handleMove = (e) => {
             const pos = getPos(e);
             mouse.x = pos.x; mouse.y = pos.y;
             if (isDragging) {
-                buddy.vx = (pos.x - buddy.x) * 0.4;
-                buddy.vy = (pos.y - buddy.y) * 0.4;
+                buddy.vx = (pos.x - buddy.x) * 0.35;
+                buddy.vy = (pos.y - buddy.y) * 0.35;
                 buddy.x = pos.x;
                 buddy.y = pos.y;
             }
@@ -311,21 +299,22 @@
             const pos = getPos(e);
             const duration = Date.now() - mouseDownTime;
             
-            if (isDragging && duration > 150) {
+            if (isDragging && duration > 160) {
                 isDragging = false;
                 saveData();
             } else {
                 const dist = Math.hypot(pos.x - buddy.x, pos.y - buddy.y);
-                if (dist < 150) {
+                if (dist < 140) {
                     let w = weapons[currentWeapon];
                     score += w.gain;
                     document.getElementById('score').innerText = `€ ${score}`;
                     hits.push({ x: pos.x, y: pos.y, icon: w.icon, life: 1 });
                     
                     const angle = Math.atan2(buddy.y - pos.y, buddy.x - pos.x);
+                    // Reazione graduale e fisica applicata
                     buddy.vx += Math.cos(angle) * w.power;
-                    buddy.vy += Math.sin(angle) * w.power;
-                    buddy.rv = (Math.random()-0.5) * 2;
+                    buddy.vy += Math.sin(angle) * (w.power * 0.8) - 5; // Spinta verso l'alto
+                    buddy.rv = (Math.random()-0.5) * (w.power / 5);
                     saveData();
                 }
                 isDragging = false;
