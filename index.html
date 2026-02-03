@@ -47,16 +47,11 @@
         <div class="absolute top-10 left-10 text-left opacity-30 font-mono text-[10px] tracking-widest uppercase">
             Status: Engine_Ready<br>Target: Pig_Unit<br>V. 2.0.26
         </div>
-
         <div class="glitch-wrapper mb-8">
             <h1 class="glitch font-huge">KICK THE<br><span class="text-red-600">PIG</span></h1>
         </div>
-
         <p class="uppercase tracking-[0.6em] text-[10px] mb-12 opacity-50 font-bold italic">High Efficiency Destruction System</p>
-
-        <button onclick="startGame()" class="play-btn px-16 py-6 text-2xl font-black uppercase italic">
-            Inizia Tortura
-        </button>
+        <button onclick="startGame()" class="play-btn px-16 py-6 text-2xl font-black uppercase italic">Inizia Tortura</button>
     </section>
 
     <div id="game-ui" class="hidden fixed inset-0 z-10 pointer-events-none">
@@ -103,14 +98,14 @@
         let score = 0;
         let currentWeapon = 'punch';
         let gameActive = false;
-        let isDragging = false;
         let shopOpen = false;
+        let hits = []; // Per visualizzare gli effetti grafici dei colpi
 
         const weapons = {
-            punch: { power: 15, gain: 10, owned: true },
-            knife: { power: 8, gain: 30, owned: false, price: 500 },
-            ak47: { power: 5, gain: 60, owned: false, price: 2500 },
-            bomb: { power: 60, gain: 500, owned: false, price: 10000 }
+            punch: { power: 25, gain: 10, owned: true, icon: '👊' },
+            knife: { power: 15, gain: 30, owned: false, price: 500, icon: '🔪' },
+            ak47: { power: 10, gain: 60, owned: false, price: 2500, icon: '🔥' },
+            bomb: { power: 80, gain: 500, owned: false, price: 10000, icon: '💥' }
         };
 
         let buddy = {
@@ -162,7 +157,6 @@
 
             // Tunica
             ctx.fillStyle = "white";
-            ctx.shadowBlur = 15; ctx.shadowColor = "rgba(255,255,255,0.1)";
             ctx.fillRect(-25, -40, 50, 80);
 
             // Testa
@@ -171,7 +165,7 @@
             ctx.fillStyle = "#ffdbac";
             ctx.fill();
 
-            // CANNA IN BOCCA
+            // CANNA IN BOCCA (RIPRISTINATA)
             ctx.strokeStyle = "#fff";
             ctx.lineWidth = 3;
             ctx.beginPath();
@@ -180,11 +174,9 @@
             ctx.stroke();
             // Brace
             ctx.fillStyle = "#ff4500";
-            ctx.shadowBlur = 10; ctx.shadowColor = "#ff4500";
             ctx.beginPath();
             ctx.arc(22, -52, 2, 0, Math.PI * 2);
             ctx.fill();
-            ctx.shadowBlur = 0;
 
             // Capelli e Barba
             ctx.fillStyle = "#4b2c20";
@@ -201,10 +193,22 @@
             ctx.restore();
         }
 
-        function update() {
-            if (!gameActive || isDragging) return;
+        function drawHits() {
+            hits.forEach((hit, index) => {
+                ctx.save();
+                ctx.font = hit.size + "px Inter";
+                ctx.globalAlpha = hit.life;
+                ctx.fillText(hit.icon, hit.x - (hit.size/2), hit.y + (hit.size/2));
+                ctx.restore();
+                hit.life -= 0.1;
+                if(hit.life <= 0) hits.splice(index, 1);
+            });
+        }
 
-            buddy.vy += 0.6; // Gravità
+        function update() {
+            if (!gameActive) return;
+
+            buddy.vy += 0.8; // Gravità aumentata per feedback più "pesante"
             buddy.x += buddy.vx;
             buddy.y += buddy.vy;
             buddy.rotation += buddy.rv;
@@ -213,9 +217,10 @@
             buddy.vy *= 0.98;
             buddy.rv *= 0.97;
 
+            // Rimbalzi terra/muri
             if (buddy.y > canvas.height - 80) {
                 buddy.y = canvas.height - 80;
-                buddy.vy *= -0.4;
+                buddy.vy *= -0.5;
             }
             if (buddy.x < 50 || buddy.x > canvas.width - 50) {
                 buddy.vx *= -0.6;
@@ -224,60 +229,46 @@
         }
 
         function animate() {
-            // SFONDO MIGLIORATO
             let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width);
             grad.addColorStop(0, "#1a1a1a");
             grad.addColorStop(1, "#0a0a0a");
             ctx.fillStyle = grad;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Griglia Tecnica
             ctx.strokeStyle = "rgba(255,0,0,0.05)";
-            ctx.lineWidth = 1;
-            for(let i=0; i<canvas.width; i+=80) {
-                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
-            }
-            for(let i=0; i<canvas.height; i+=80) {
-                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
-            }
+            for(let i=0; i<canvas.width; i+=80) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke(); }
+            for(let i=0; i<canvas.height; i+=80) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke(); }
 
             update();
             drawBuddy();
+            drawHits();
             requestAnimationFrame(animate);
         }
 
-        // INPUT GESTITI PER DRAG E HIT
+        // SISTEMA DI COLPO (SENZA DRAG)
         canvas.addEventListener('mousedown', (e) => {
             const dist = Math.hypot(e.clientX - buddy.x, e.clientY - buddy.y);
-            if (dist < 80) {
-                isDragging = true;
-                buddy.vx = 0; buddy.vy = 0; buddy.rv = 0;
-            }
-        });
+            
+            // Colpo a segno se clicchi vicino a Gesù
+            if (dist < 120) {
+                let w = weapons[currentWeapon];
+                score += w.gain;
+                document.getElementById('score').innerText = `€ ${score}`;
+                
+                // Effetto grafico dell'arma
+                hits.push({
+                    x: e.clientX,
+                    y: e.clientY,
+                    icon: w.icon,
+                    size: currentWeapon === 'bomb' ? 100 : 50,
+                    life: 1.0
+                });
 
-        window.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                buddy.x = e.clientX;
-                buddy.y = e.clientY;
-            }
-        });
-
-        window.addEventListener('mouseup', (e) => {
-            if (isDragging) {
-                isDragging = false;
-                buddy.vx = (e.movementX || 0) * 2;
-                buddy.vy = (e.movementY || 0) * 2;
-            } else {
-                const dist = Math.hypot(e.clientX - buddy.x, e.clientY - buddy.y);
-                if (dist < 100) {
-                    let w = weapons[currentWeapon];
-                    score += w.gain;
-                    document.getElementById('score').innerText = `€ ${score}`;
-                    const angle = Math.atan2(buddy.y - e.clientY, buddy.x - e.clientX);
-                    buddy.vx += Math.cos(angle) * w.power;
-                    buddy.vy += Math.sin(angle) * w.power;
-                    buddy.rv = (Math.random() - 0.5) * 0.4;
-                }
+                // Spostamento di Gesù
+                const angle = Math.atan2(buddy.y - e.clientY, buddy.x - e.clientX);
+                buddy.vx += Math.cos(angle) * w.power;
+                buddy.vy += Math.sin(angle) * w.power;
+                buddy.rv = (Math.random() - 0.5) * 0.8;
             }
         });
 
