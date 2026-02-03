@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KICK THE PIG | Official</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;900&family=Orbitron:wght@700&display=swap');
+        
+        :root { --accent: #ff003c; }
+        body { background-color: #050505; color: white; font-family: 'Inter', sans-serif; overflow: hidden; margin: 0; }
+        
+        /* --- ESTETICA HOME --- */
+        .font-huge { font-family: 'Archivo Black', sans-serif; line-height: 0.8; letter-spacing: -0.05em; }
+        .glitch { font-size: clamp(4rem, 12vw, 10rem); position: relative; text-transform: uppercase; }
+        .glitch::before, .glitch::after { content: "KICK THE PIG"; position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0.8; }
+        .glitch::before { color: #0ff; z-index: -1; animation: glitch-anim 0.3s infinite; }
+        .glitch::after { color: var(--accent); z-index: -2; animation: glitch-anim 0.3s infinite reverse; }
+        @keyframes glitch-anim {
+            0% { transform: translate(0); }
+            20% { transform: translate(-3px, 2px); }
+            40% { transform: translate(-3px, -2px); }
+            60% { transform: translate(3px, 2px); }
+            100% { transform: translate(0); }
+        }
+
+        .play-btn { background: white; color: black; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0% 100%); transition: all 0.3s ease; }
+        .play-btn:hover { background: var(--accent); color: white; transform: scale(1.1) rotate(-1deg); }
+
+        /* --- UI GIOCO --- */
+        .weapon-card { transition: all 0.2s; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); }
+        .weapon-card:hover { border-color: var(--accent); background: rgba(255,0,60,0.2); }
+        .active-weapon { border-color: var(--accent) !important; background: rgba(255,0,60,0.4) !important; }
+        canvas { cursor: crosshair; touch-action: none; }
+        .hud-font { font-family: 'Orbitron', sans-serif; }
+    </style>
+</head>
+<body>
+
+    <div class="fixed inset-0 pointer-events-none opacity-[0.03] z-[100]" style="background-image: url('https://grainy-gradients.vercel.app/noise.svg');"></div>
+
+    <section id="home-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black text-center p-6">
+        <div class="absolute top-10 left-10 text-left opacity-30 font-mono text-[10px] tracking-widest uppercase">
+            Status: Engine_Ready<br>Target: Pig_Unit<br>V. 2.0.26
+        </div>
+
+        <div class="glitch-wrapper mb-8">
+            <h1 class="glitch font-huge">KICK THE<br><span class="text-red-600">PIG</span></h1>
+        </div>
+
+        <p class="uppercase tracking-[0.6em] text-[10px] mb-12 opacity-50 font-bold italic">High Efficiency Destruction System</p>
+
+        <button onclick="startGame()" class="play-btn px-16 py-6 text-2xl font-black uppercase italic">
+            Inizia Tortura
+        </button>
+    </section>
+
+    <div id="game-ui" class="hidden fixed inset-0 z-10">
+        <div class="absolute top-8 left-8 hud-font">
+            <p class="text-red-600 text-[10px] tracking-tighter uppercase mb-1">Danni Totali</p>
+            <h2 id="score" class="text-5xl font-black italic">€ 0</h2>
+        </div>
+
+        <div class="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3">
+            <div onclick="setWeapon('punch', this)" class="weapon-card active-weapon p-4 rounded-xl text-center w-20">
+                <span class="block text-2xl">👊</span>
+                <span class="text-[8px] font-bold uppercase tracking-widest">Punch</span>
+            </div>
+            <div onclick="setWeapon('knife', this)" class="weapon-card p-4 rounded-xl text-center w-20">
+                <span class="block text-2xl">🔪</span>
+                <span class="text-[8px] font-bold uppercase tracking-widest">Knife</span>
+            </div>
+            <div onclick="setWeapon('ak47', this)" class="weapon-card p-4 rounded-xl text-center w-20">
+                <span class="block text-2xl">🔫</span>
+                <span class="text-[8px] font-bold uppercase tracking-widest">AK-47</span>
+            </div>
+            <div onclick="setWeapon('bomb', this)" class="weapon-card p-4 rounded-xl text-center w-20">
+                <span class="block text-2xl">💣</span>
+                <span class="text-[8px] font-bold uppercase tracking-widest">Bomb</span>
+            </div>
+        </div>
+
+        <button onclick="location.reload()" class="absolute bottom-8 left-8 text-[10px] opacity-30 hover:opacity-100 uppercase font-bold tracking-widest">Spegni Sistema</button>
+    </div>
+
+    <canvas id="game-canvas" class="block"></canvas>
+
+    <script>
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        let score = 0;
+        let currentWeapon = 'punch';
+        let gameActive = false;
+
+        // Fisiche del Target (Gesù)
+        let buddy = {
+            x: 0, y: 0,
+            vx: 0, vy: 0,
+            rotation: 0, rv: 0,
+            width: 60, height: 120
+        };
+
+        function startGame() {
+            document.getElementById('home-screen').style.display = 'none';
+            document.getElementById('game-ui').classList.remove('hidden');
+            resize();
+            buddy.x = canvas.width / 2;
+            buddy.y = canvas.height / 2;
+            gameActive = true;
+            animate();
+        }
+
+        function setWeapon(type, el) {
+            currentWeapon = type;
+            document.querySelectorAll('.weapon-card').forEach(c => c.classList.remove('active-weapon'));
+            el.classList.add('active-weapon');
+        }
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function drawBuddy() {
+            ctx.save();
+            ctx.translate(buddy.x, buddy.y);
+            ctx.rotate(buddy.rotation);
+
+            // Tunica (Corpo)
+            ctx.fillStyle = "white";
+            ctx.shadowBlur = 20; ctx.shadowColor = "rgba(255,255,255,0.2)";
+            ctx.fillRect(-25, -40, 50, 80);
+
+            // Testa
+            ctx.beginPath();
+            ctx.arc(0, -65, 25, 0, Math.PI * 2);
+            ctx.fillStyle = "#ffdbac";
+            ctx.fill();
+
+            // Capelli e Barba (Marrone)
+            ctx.fillStyle = "#4b2c20";
+            ctx.fillRect(-28, -75, 56, 12); // Capelli
+            ctx.fillRect(-12, -50, 24, 18); // Barba
+
+            // Aureola
+            ctx.strokeStyle = "#ffd700";
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.ellipse(0, -100, 22, 6, 0, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function applyHit(mx, my) {
+            const dist = Math.hypot(mx - buddy.x, my - buddy.y);
+            if (dist < 80) {
+                let power = 0;
+                let gain = 0;
+
+                switch(currentWeapon) {
+                    case 'punch': power = 15; gain = 10; break;
+                    case 'knife': power = 8; gain = 25; break;
+                    case 'ak47': power = 5; gain = 50; break;
+                    case 'bomb': power = 50; gain = 200; break;
+                }
+
+                score += gain;
+                document.getElementById('score').innerText = `€ ${score}`;
+
+                // Calcolo direzione forza
+                const angle = Math.atan2(buddy.y - my, buddy.x - mx);
+                buddy.vx += Math.cos(angle) * power;
+                buddy.vy += Math.sin(angle) * power;
+                buddy.rv = (Math.random() - 0.5) * 0.2; // Rotazione casuale all'impatto
+            }
+        }
+
+        function update() {
+            if (!gameActive) return;
+
+            // Gravità ed Energia
+            buddy.vy += 0.6;
+            buddy.x += buddy.vx;
+            buddy.y += buddy.vy;
+            buddy.rotation += buddy.rv;
+
+            // Attrito aria
+            buddy.vx *= 0.99;
+            buddy.vy *= 0.99;
+            buddy.rv *= 0.98;
+
+            // Limiti Schermo (Rimbalzo)
+            if (buddy.y > canvas.height - 80) {
+                buddy.y = canvas.height - 80;
+                buddy.vy *= -0.5;
+            }
+            if (buddy.x < 50 || buddy.x > canvas.width - 50) {
+                buddy.vx *= -0.7;
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = "#0a0a0a";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Griglia tecnica di sfondo
+            ctx.strokeStyle = "rgba(255,255,255,0.02)";
+            for(let i=0; i<canvas.width; i+=60) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+            }
+
+            update();
+            drawBuddy();
+            requestAnimationFrame(animate);
+        }
+
+        canvas.addEventListener('mousedown', (e) => applyHit(e.clientX, e.clientY));
+        window.addEventListener('resize', resize);
+    </script>
+</body>
+</html>
