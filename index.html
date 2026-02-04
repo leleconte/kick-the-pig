@@ -6,7 +6,7 @@
     <title>KICK THE PIG | Official</title> 
     <script src="https://cdn.tailwindcss.com"></script> 
     <style> 
-        @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;900&family=Orbitron:wght@700&display=swap'); 
+        @import url('https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;900&family=Orbitron:wght@700&family=JetBrains+Mono:wght@700&display=swap'); 
         
         :root { --accent: #ff003c; } 
         body { background-color: #050505; color: white; font-family: 'Inter', sans-serif; overflow: hidden; margin: 0; touch-action: none; } 
@@ -32,15 +32,16 @@
         .play-btn:hover { background: var(--accent); color: white; transform: scale(1.05); } 
 
         /* --- UI GIOCO --- */ 
-        .weapon-card { transition: all 0.2s; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); } 
-        .locked { filter: grayscale(1) opacity(0.4); } 
-        .active-weapon { border-color: var(--accent) !important; background: rgba(255,0,60,0.3) !important; } 
+        .weapon-card { transition: all 0.2s; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.08); } 
+        .locked { filter: grayscale(1) opacity(0.5); } 
+        .active-weapon { border-color: var(--accent) !important; background: rgba(255,0,60,0.2) !important; box-shadow: inset 0 0 15px rgba(255,0,60,0.2); } 
         
         canvas { cursor: none !important; touch-action: none; } 
         
-        #shop-menu { background: rgba(0,0,0,0.98); backdrop-filter: blur(20px); transition: 0.4s; z-index: 60; overflow-y: auto; } 
+        #shop-menu { background: rgba(0,0,0,0.98); backdrop-filter: blur(25px); transition: 0.4s; z-index: 60; overflow-y: auto; } 
         .hud-font { font-family: 'Orbitron', sans-serif; } 
-        
+        .price-font { font-family: 'JetBrains Mono', monospace; }
+
         /* Nuovi stili per sezioni Shop */
         .shop-tab { border-bottom: 2px solid transparent; opacity: 0.5; transition: 0.3s; }
         .shop-tab.active { border-color: var(--accent); opacity: 1; color: var(--accent); }
@@ -118,17 +119,17 @@
             knife: { name: "KNIFE", power: 30, gain: 2000, owned: false, price: 350000, icon: '🔪', mass: 0.5, cat: 'armory' }, 
             bat: { name: "NAIL BAT", power: 55, gain: 5000, owned: false, price: 750000, icon: '🏏', mass: 2.2, cat: 'armory' }, 
             glock: { name: "GLOCK", power: 50, gain: 15000, owned: false, price: 1500000, icon: '🔫', mass: 1.5, cat: 'armory' }, 
-            shotgun: { name: "SHOTGUN", power: 110, gain: 50000, owned: false, price: 5000000, icon: '🔫', mass: 5.0, cat: 'armory' }, 
-            ak47: { name: "AK-47", power: 65, gain: 150000, owned: false, price: 15000000, icon: '🔥', mass: 1.0, cat: 'armory' }, 
-            minigun: { name: "MINIGUN", power: 90, gain: 500000, owned: false, price: 50000000, icon: '🔫', mass: 4.0, cat: 'armory' }, 
-            nuke: { name: "NUKE", power: 1200, gain: 5000000, owned: false, price: 500000000, icon: '💥', mass: 100.0, cat: 'armory' }, 
+            shotgun: { name: "SHOTGUN", power: 110, gain: 40000, owned: false, price: 4000000, icon: '🔫', mass: 5.0, cat: 'armory' }, 
+            ak47: { name: "AK-47", power: 65, gain: 100000, owned: false, price: 7500000, icon: '🔥', mass: 1.0, cat: 'armory' }, 
+            minigun: { name: "MINIGUN", power: 90, gain: 150000, owned: false, price: 9000000, icon: '🔫', mass: 4.0, cat: 'armory' }, 
+            nuke: { name: "NUKE", power: 1200, gain: 250000, owned: false, price: 10000000, icon: '💥', mass: 100.0, cat: 'armory' }, 
             
             // --- MACCHINE DELLA TORTURA ---
-            electric_chair: { name: "CHAIR", power: 150, gain: 1000000, owned: false, price: 100000000, icon: '⚡', mass: 20.0, cat: 'torture' }, 
-            iron_maiden: { name: "MAIDEN", power: 250, gain: 5000000, owned: false, price: 500000000, icon: '⚰️', mass: 30.0, cat: 'torture' }, 
-            press: { name: "HYDRAULIC", power: 500, gain: 15000000, owned: false, price: 1000000000, icon: '🏗️', mass: 60.0, cat: 'torture' }, 
-            guillotine: { name: "GUILLOTINE", power: 1000, gain: 50000000, owned: false, price: 5000000000, icon: '📐', mass: 100.0, cat: 'torture' }, 
-            blackhole: { name: "SINGULARITY", power: 5000, gain: 200000000, owned: false, price: 20000000000, icon: '🕳️', mass: 500.0, cat: 'torture' }
+            electric_chair: { name: "CHAIR", power: 150, gain: 120000, owned: false, price: 5000000, icon: '⚡', mass: 20.0, cat: 'torture' }, 
+            iron_maiden: { name: "MAIDEN", power: 250, gain: 180000, owned: false, price: 7500000, icon: '⚰️', mass: 30.0, cat: 'torture' }, 
+            press: { name: "HYDRAULIC", power: 500, gain: 220000, owned: false, price: 9000000, icon: '🏗️', mass: 60.0, cat: 'torture' }, 
+            guillotine: { name: "GUILLOTINE", power: 1000, gain: 300000, owned: false, price: 10000000, icon: '📐', mass: 100.0, cat: 'torture' }, 
+            blackhole: { name: "SINGULARITY", power: 5000, gain: 500000, owned: false, price: 10000000, icon: '🕳️', mass: 500.0, cat: 'torture' }
         }; 
 
         let buddy = { x: 0, y: 0, vx: 0, vy: 0, rotation: 0, rv: 0, r: 60 }; 
@@ -150,17 +151,17 @@
                 card.className = `weapon-card p-4 rounded-xl flex items-center justify-between ${w.owned ? '' : 'locked'} ${currentWeapon === id ? 'active-weapon' : ''}`;
                 card.onclick = () => buyOrSelect(id, w.price);
                 
-                let priceLabel = w.owned ? "OWNED" : "€ " + (w.price >= 1e9 ? (w.price/1e9).toFixed(1) + 'B' : (w.price >= 1e6 ? (w.price/1e6).toFixed(1) + 'M' : w.price.toLocaleString()));
+                let priceLabel = w.owned ? "SBLOCCATA" : "€ " + w.price.toLocaleString();
                 
                 card.innerHTML = `
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">${w.icon}</span>
                         <div>
                             <p class="text-[10px] font-bold uppercase opacity-80">${w.name}</p>
-                            <p class="text-[8px] text-red-500 font-black">+€ ${w.gain.toLocaleString()}</p>
+                            <p class="text-[8px] text-green-500 font-black">+€ ${w.gain.toLocaleString()}</p>
                         </div>
                     </div>
-                    <span class="text-[9px] font-mono font-bold">${priceLabel}</span>
+                    <span class="price-font text-[11px] font-bold ${w.owned ? 'text-white/40' : 'text-red-500'}">${priceLabel}</span>
                 `;
                 list.appendChild(card);
             });
