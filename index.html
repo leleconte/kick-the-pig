@@ -40,6 +40,11 @@
         
         #shop-menu { background: rgba(0,0,0,0.98); backdrop-filter: blur(20px); transition: 0.4s; z-index: 60; overflow-y: auto; } 
         .hud-font { font-family: 'Orbitron', sans-serif; } 
+        
+        /* Nuovi stili per sezioni Shop */
+        .shop-tab { border-bottom: 2px solid transparent; opacity: 0.5; transition: 0.3s; }
+        .shop-tab.active { border-color: var(--accent); opacity: 1; color: var(--accent); }
+
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: var(--accent); }
     </style> 
@@ -71,11 +76,17 @@
         </div> 
 
         <div class="absolute bottom-8 right-8 flex gap-4 pointer-events-auto"> 
-            <button onclick="toggleShop()" class="bg-white text-black font-black px-8 py-3 uppercase tracking-widest hover:bg-red-600 hover:text-white transition-colors">ARMORY</button> 
+            <button onclick="toggleShop()" class="bg-white text-black font-black px-8 py-3 uppercase tracking-widest hover:bg-red-600 hover:text-white transition-colors">BLACK MARKET</button> 
         </div> 
 
         <div id="shop-menu" class="absolute right-0 top-0 h-full w-96 translate-x-full p-8 pointer-events-auto border-l border-white/10"> 
-            <h3 class="font-black text-2xl uppercase mb-6 italic border-b border-red-600 pb-2">Mercato Nero</h3> 
+            <h3 class="font-black text-2xl uppercase mb-4 italic text-red-600">Mercato Nero</h3> 
+            
+            <div class="flex gap-4 mb-6 border-b border-white/10 pb-2">
+                <button onclick="renderShop('armory')" id="btn-armory" class="shop-tab active font-bold text-xs uppercase tracking-widest">Armeria</button>
+                <button onclick="renderShop('torture')" id="btn-torture" class="shop-tab font-bold text-xs uppercase tracking-widest text-red-500">Tortura</button>
+            </div>
+
             <div id="weapon-list" class="flex flex-col gap-3 pb-20"> 
                 </div> 
             <button onclick="toggleShop()" class="mt-8 text-[10px] uppercase opacity-50 block w-full text-center">Torna al Massacro</button> 
@@ -91,6 +102,7 @@
         let currentUser = ""; 
         let score = 0; 
         let currentWeapon = 'punch'; 
+        let currentCategory = 'armory';
         let gameActive = false; 
         let shopOpen = false; 
         let isDragging = false; 
@@ -98,44 +110,41 @@
         let hits = []; 
         let mouse = { x: 0, y: 0 }; 
 
-        // --- ARMERIA MASSICCIA (20+ armi e 5 macchine) ---
         const weapons = { 
-            punch: { name: "PUNCH", power: 15, gain: 10, owned: true, price: 0, icon: '👊', mass: 1 }, 
-            slap: { name: "SLAP", power: 10, gain: 20, owned: false, price: 200, icon: '✋', mass: 0.8 }, 
-            stick: { name: "STICK", power: 25, gain: 50, owned: false, price: 1000, icon: '🪵', mass: 1.2 }, 
-            hammer: { name: "HAMMER", power: 45, gain: 150, owned: false, price: 3500, icon: '🔨', mass: 2.5 }, 
-            knife: { name: "KNIFE", power: 30, gain: 300, owned: false, price: 8000, icon: '🔪', mass: 0.5 }, 
-            bat: { name: "NAIL BAT", power: 55, gain: 800, owned: false, price: 15000, icon: '🏏', mass: 2.2 }, 
-            chainsaw: { name: "CHAINSAW", power: 20, gain: 2000, owned: false, price: 40000, icon: '⚙️', mass: 0.3 }, 
-            glock: { name: "GLOCK", power: 50, gain: 5000, owned: false, price: 85000, icon: '🔫', mass: 1.5 }, 
-            uzi: { name: "UZI", power: 15, gain: 12000, owned: false, price: 150000, icon: '🔫', mass: 0.2 }, 
-            shotgun: { name: "SHOTGUN", power: 110, gain: 25000, owned: false, price: 250000, icon: '🔫', mass: 5.0 }, 
-            ak47: { name: "AK-47", power: 65, gain: 50000, owned: false, price: 500000, icon: '🔥', mass: 1.0 }, 
-            m60: { name: "M60", power: 85, gain: 100000, owned: false, price: 1000000, icon: '🔫', mass: 3.5 }, 
-            grenade: { name: "GRENADE", power: 180, gain: 250000, owned: false, price: 2500000, icon: '🧨', mass: 10.0 }, 
-            rpg: { name: "RPG-7", power: 300, gain: 500000, owned: false, price: 6000000, icon: '🚀', mass: 15.0 }, 
-            katana: { name: "KATANA", power: 40, gain: 1000000, owned: false, price: 12000000, icon: '⚔️', mass: 0.5 }, 
-            minigun: { name: "MINIGUN", power: 90, gain: 2500000, owned: false, price: 25000000, icon: '🔫', mass: 4.0 }, 
-            flamethrower: { name: "FLAME", power: 12, gain: 5000000, owned: false, price: 50000000, icon: '💨', mass: 0.1 }, 
-            railgun: { name: "RAILGUN", power: 500, gain: 15000000, owned: false, price: 150000000, icon: '⚡', mass: 25.0 }, 
-            nuke: { name: "NUKE", power: 1200, gain: 50000000, owned: false, price: 500000000, icon: '💥', mass: 100.0 }, 
-            laser: { name: "DEATH RAY", power: 30, gain: 100000000, owned: false, price: 1000000000, icon: '🏮', mass: 0.05 },
+            punch: { name: "PUNCH", power: 15, gain: 10, owned: true, price: 0, icon: '👊', mass: 1, cat: 'armory' }, 
+            slap: { name: "SLAP", power: 10, gain: 50, owned: false, price: 5000, icon: '✋', mass: 0.8, cat: 'armory' }, 
+            stick: { name: "STICK", power: 25, gain: 150, owned: false, price: 25000, icon: '🪵', mass: 1.2, cat: 'armory' }, 
+            hammer: { name: "HAMMER", power: 45, gain: 600, owned: false, price: 100000, icon: '🔨', mass: 2.5, cat: 'armory' }, 
+            knife: { name: "KNIFE", power: 30, gain: 2000, owned: false, price: 350000, icon: '🔪', mass: 0.5, cat: 'armory' }, 
+            bat: { name: "NAIL BAT", power: 55, gain: 5000, owned: false, price: 750000, icon: '🏏', mass: 2.2, cat: 'armory' }, 
+            glock: { name: "GLOCK", power: 50, gain: 15000, owned: false, price: 1500000, icon: '🔫', mass: 1.5, cat: 'armory' }, 
+            shotgun: { name: "SHOTGUN", power: 110, gain: 50000, owned: false, price: 5000000, icon: '🔫', mass: 5.0, cat: 'armory' }, 
+            ak47: { name: "AK-47", power: 65, gain: 150000, owned: false, price: 15000000, icon: '🔥', mass: 1.0, cat: 'armory' }, 
+            minigun: { name: "MINIGUN", power: 90, gain: 500000, owned: false, price: 50000000, icon: '🔫', mass: 4.0, cat: 'armory' }, 
+            nuke: { name: "NUKE", power: 1200, gain: 5000000, owned: false, price: 500000000, icon: '💥', mass: 100.0, cat: 'armory' }, 
             
             // --- MACCHINE DELLA TORTURA ---
-            electric_chair: { name: "CHAIR", power: 150, gain: 250000000, owned: false, price: 5000000000, icon: '⚡', mass: 20.0 }, 
-            iron_maiden: { name: "MAIDEN", power: 250, gain: 600000000, owned: false, price: 15000000000, icon: '⚰️', mass: 30.0 }, 
-            press: { name: "HYDRAULIC", power: 500, gain: 1500000000, owned: false, price: 40000000000, icon: '🏗️', mass: 60.0 }, 
-            guillotine: { name: "GUILLOTINE", power: 1000, gain: 5000000000, owned: false, price: 120000000000, icon: '📐', mass: 100.0 }, 
-            blackhole: { name: "SINGULARITY", power: 5000, gain: 20000000000, owned: false, price: 500000000000, icon: '🕳️', mass: 500.0 }
+            electric_chair: { name: "CHAIR", power: 150, gain: 1000000, owned: false, price: 100000000, icon: '⚡', mass: 20.0, cat: 'torture' }, 
+            iron_maiden: { name: "MAIDEN", power: 250, gain: 5000000, owned: false, price: 500000000, icon: '⚰️', mass: 30.0, cat: 'torture' }, 
+            press: { name: "HYDRAULIC", power: 500, gain: 15000000, owned: false, price: 1000000000, icon: '🏗️', mass: 60.0, cat: 'torture' }, 
+            guillotine: { name: "GUILLOTINE", power: 1000, gain: 50000000, owned: false, price: 5000000000, icon: '📐', mass: 100.0, cat: 'torture' }, 
+            blackhole: { name: "SINGULARITY", power: 5000, gain: 200000000, owned: false, price: 20000000000, icon: '🕳️', mass: 500.0, cat: 'torture' }
         }; 
 
         let buddy = { x: 0, y: 0, vx: 0, vy: 0, rotation: 0, rv: 0, r: 60 }; 
 
-        function initShop() {
+        function renderShop(category) {
+            currentCategory = category;
+            document.getElementById('btn-armory').classList.toggle('active', category === 'armory');
+            document.getElementById('btn-torture').classList.toggle('active', category === 'torture');
+            
             const list = document.getElementById('weapon-list');
             list.innerHTML = '';
+            
             Object.keys(weapons).forEach(id => {
                 const w = weapons[id];
+                if (w.cat !== category) return;
+
                 const card = document.createElement('div');
                 card.id = 'w-' + id;
                 card.className = `weapon-card p-4 rounded-xl flex items-center justify-between ${w.owned ? '' : 'locked'} ${currentWeapon === id ? 'active-weapon' : ''}`;
@@ -166,7 +175,7 @@
             document.getElementById('score').innerText = `€ ${score.toLocaleString()}`; 
             
             savedData.owned.forEach(w => { if(weapons[w]) weapons[w].owned = true; });
-            initShop();
+            renderShop('armory');
 
             document.getElementById('login-screen').style.display = 'none'; 
             document.getElementById('home-screen').style.display = 'flex'; 
@@ -196,7 +205,7 @@
         function buyOrSelect(id, price) { 
             if (weapons[id].owned) { 
                 currentWeapon = id; 
-                initShop();
+                renderShop(currentCategory);
             } else if (score >= price) { 
                 score -= price; 
                 weapons[id].owned = true; 
@@ -342,7 +351,6 @@
                     
                     const angle = Math.atan2(buddy.y - pos.y, buddy.x - pos.x); 
                     
-                    // Fisica scalata in base al potere dell'arma
                     let force = w.power / (w.mass * 0.5 + 1);
                     buddy.vx += Math.cos(angle) * force; 
                     buddy.vy += Math.sin(angle) * force;  
