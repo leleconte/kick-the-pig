@@ -40,14 +40,14 @@
         
         #shop-menu { background: rgba(0,0,0,0.98); backdrop-filter: blur(25px); transition: 0.4s; z-index: 60; overflow-y: auto; } 
         .hud-font { font-family: 'Orbitron', sans-serif; } 
-        .price-font { font-family: 'JetBrains Mono', monospace; }
+        .price-font { font-family: 'JetBrains Mono', monospace; } 
 
-        /* Nuovi stili per sezioni Shop */
-        .shop-tab { border-bottom: 2px solid transparent; opacity: 0.5; transition: 0.3s; }
-        .shop-tab.active { border-color: var(--accent); opacity: 1; color: var(--accent); }
+        /* Nuovi stili per sezioni Shop */ 
+        .shop-tab { border-bottom: 2px solid transparent; opacity: 0.5; transition: 0.3s; } 
+        .shop-tab.active { border-color: var(--accent); opacity: 1; color: var(--accent); } 
 
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: var(--accent); }
+        ::-webkit-scrollbar { width: 4px; } 
+        ::-webkit-scrollbar-thumb { background: var(--accent); } 
     </style> 
 </head> 
 <body> 
@@ -73,7 +73,7 @@
     <div id="game-ui" class="hidden fixed inset-0 z-10 pointer-events-none"> 
         <div class="absolute top-8 left-8 hud-font pointer-events-auto"> 
             <p class="text-red-600 text-[10px] tracking-tighter uppercase mb-1">Portafoglio</p> 
-            <h2 id="score" class="text-5xl font-black italic text-white">€ 0</h2> 
+            <h2 id="score" class="text-5xl font-black italic text-white leading-none">€ 0</h2> 
         </div> 
 
         <div class="absolute bottom-8 right-8 flex gap-4 pointer-events-auto"> 
@@ -83,10 +83,10 @@
         <div id="shop-menu" class="absolute right-0 top-0 h-full w-96 translate-x-full p-8 pointer-events-auto border-l border-white/10"> 
             <h3 class="font-black text-2xl uppercase mb-4 italic text-red-600">Mercato Nero</h3> 
             
-            <div class="flex gap-4 mb-6 border-b border-white/10 pb-2">
-                <button onclick="renderShop('armory')" id="btn-armory" class="shop-tab active font-bold text-xs uppercase tracking-widest">Armeria</button>
-                <button onclick="renderShop('torture')" id="btn-torture" class="shop-tab font-bold text-xs uppercase tracking-widest text-red-500">Tortura</button>
-            </div>
+            <div class="flex gap-4 mb-6 border-b border-white/10 pb-2"> 
+                <button onclick="renderShop('armory')" id="btn-armory" class="shop-tab active font-bold text-xs uppercase tracking-widest">Armeria</button> 
+                <button onclick="renderShop('torture')" id="btn-torture" class="shop-tab font-bold text-xs uppercase tracking-widest text-red-500">Tortura</button> 
+            </div> 
 
             <div id="weapon-list" class="flex flex-col gap-3 pb-20"> 
                 </div> 
@@ -103,13 +103,15 @@
         let currentUser = ""; 
         let score = 0; 
         let currentWeapon = 'punch'; 
-        let currentCategory = 'armory';
+        let currentCategory = 'armory'; 
         let gameActive = false; 
         let shopOpen = false; 
         let isDragging = false; 
         let mouseDownTime = 0; 
         let hits = []; 
         let mouse = { x: 0, y: 0 }; 
+        let bgHue = 260;
+        let animTimer = 0;
 
         const weapons = { 
             punch: { name: "PUNCH", power: 15, gain: 10, owned: true, price: 0, icon: '👊', mass: 1, cat: 'armory' }, 
@@ -124,48 +126,54 @@
             minigun: { name: "MINIGUN", power: 90, gain: 150000, owned: false, price: 9000000, icon: '🔫', mass: 4.0, cat: 'armory' }, 
             nuke: { name: "NUKE", power: 1200, gain: 250000, owned: false, price: 10000000, icon: '💥', mass: 100.0, cat: 'armory' }, 
             
-            // --- MACCHINE DELLA TORTURA ---
-            electric_chair: { name: "CHAIR", power: 150, gain: 120000, owned: false, price: 5000000, icon: '⚡', mass: 20.0, cat: 'torture' }, 
-            iron_maiden: { name: "MAIDEN", power: 250, gain: 180000, owned: false, price: 7500000, icon: '⚰️', mass: 30.0, cat: 'torture' }, 
-            press: { name: "HYDRAULIC", power: 500, gain: 220000, owned: false, price: 9000000, icon: '🏗️', mass: 60.0, cat: 'torture' }, 
-            guillotine: { name: "GUILLOTINE", power: 1000, gain: 300000, owned: false, price: 10000000, icon: '📐', mass: 100.0, cat: 'torture' }, 
-            blackhole: { name: "SINGULARITY", power: 5000, gain: 500000, owned: false, price: 10000000, icon: '🕳️', mass: 500.0, cat: 'torture' }
+            electric_chair: { name: "CHAIR", power: 0, gain: 120000, owned: false, price: 5000000, icon: '⚡', mass: 20.0, cat: 'torture' }, 
+            iron_maiden: { name: "MAIDEN", power: 0, gain: 180000, owned: false, price: 7500000, icon: '⚰️', mass: 30.0, cat: 'torture' }, 
+            press: { name: "HYDRAULIC", power: 0, gain: 220000, owned: false, price: 9000000, icon: '🏗️', mass: 60.0, cat: 'torture' }, 
+            guillotine: { name: "GUILLOTINE", power: 0, gain: 300000, owned: false, price: 10000000, icon: '📐', mass: 100.0, cat: 'torture' }, 
+            blackhole: { name: "SINGULARITY", power: 0, gain: 500000, owned: false, price: 25000000, icon: '🕳️', mass: 500.0, cat: 'torture' } 
         }; 
 
         let buddy = { x: 0, y: 0, vx: 0, vy: 0, rotation: 0, rv: 0, r: 60 }; 
 
-        function renderShop(category) {
-            currentCategory = category;
-            document.getElementById('btn-armory').classList.toggle('active', category === 'armory');
-            document.getElementById('btn-torture').classList.toggle('active', category === 'torture');
-            
-            const list = document.getElementById('weapon-list');
-            list.innerHTML = '';
-            
-            Object.keys(weapons).forEach(id => {
-                const w = weapons[id];
-                if (w.cat !== category) return;
-
-                const card = document.createElement('div');
-                card.id = 'w-' + id;
-                card.className = `weapon-card p-4 rounded-xl flex items-center justify-between ${w.owned ? '' : 'locked'} ${currentWeapon === id ? 'active-weapon' : ''}`;
-                card.onclick = () => buyOrSelect(id, w.price);
-                
-                let priceLabel = w.owned ? "SBLOCCATA" : "€ " + w.price.toLocaleString();
-                
-                card.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="text-2xl">${w.icon}</span>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase opacity-80">${w.name}</p>
-                            <p class="text-[8px] text-green-500 font-black">+€ ${w.gain.toLocaleString()}</p>
-                        </div>
-                    </div>
-                    <span class="price-font text-[11px] font-bold ${w.owned ? 'text-white/40' : 'text-red-500'}">${priceLabel}</span>
-                `;
-                list.appendChild(card);
-            });
+        function formatMoney(num) {
+            if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return num.toLocaleString();
         }
+
+        function renderShop(category) { 
+            currentCategory = category; 
+            document.getElementById('btn-armory').classList.toggle('active', category === 'armory'); 
+            document.getElementById('btn-torture').classList.toggle('active', category === 'torture'); 
+            
+            const list = document.getElementById('weapon-list'); 
+            list.innerHTML = ''; 
+            
+            Object.keys(weapons).forEach(id => { 
+                const w = weapons[id]; 
+                if (w.cat !== category) return; 
+
+                const card = document.createElement('div'); 
+                card.id = 'w-' + id; 
+                card.className = `weapon-card p-4 rounded-xl flex items-center justify-between ${w.owned ? '' : 'locked'} ${currentWeapon === id ? 'active-weapon' : ''}`; 
+                card.onclick = () => buyOrSelect(id, w.price); 
+                
+                let priceLabel = w.owned ? "SBLOCCATA" : "€ " + formatMoney(w.price); 
+                
+                card.innerHTML = ` 
+                    <div class="flex items-center gap-3"> 
+                        <span class="text-2xl">${w.icon}</span> 
+                        <div> 
+                            <p class="text-[10px] font-bold uppercase opacity-80">${w.name}</p> 
+                            <p class="text-[8px] text-green-500 font-black">+€ ${formatMoney(w.gain)}</p> 
+                        </div> 
+                    </div> 
+                    <span class="price-font text-[11px] font-bold ${w.owned ? 'text-white/40' : 'text-red-500'}">${priceLabel}</span> 
+                `; 
+                list.appendChild(card); 
+            }); 
+        } 
 
         function handleLogin() { 
             const input = document.getElementById('username-input').value.trim().toUpperCase(); 
@@ -173,10 +181,10 @@
             currentUser = input; 
             const savedData = JSON.parse(localStorage.getItem(`KTP_${currentUser}`)) || { score: 0, owned: ['punch'] }; 
             score = savedData.score; 
-            document.getElementById('score').innerText = `€ ${score.toLocaleString()}`; 
+            document.getElementById('score').innerText = `€ ${formatMoney(score)}`; 
             
-            savedData.owned.forEach(w => { if(weapons[w]) weapons[w].owned = true; });
-            renderShop('armory');
+            savedData.owned.forEach(w => { if(weapons[w]) weapons[w].owned = true; }); 
+            renderShop('armory'); 
 
             document.getElementById('login-screen').style.display = 'none'; 
             document.getElementById('home-screen').style.display = 'flex'; 
@@ -206,11 +214,11 @@
         function buyOrSelect(id, price) { 
             if (weapons[id].owned) { 
                 currentWeapon = id; 
-                renderShop(currentCategory);
+                renderShop(currentCategory); 
             } else if (score >= price) { 
                 score -= price; 
                 weapons[id].owned = true; 
-                document.getElementById('score').innerText = `€ ${score.toLocaleString()}`; 
+                document.getElementById('score').innerText = `€ ${formatMoney(score)}`; 
                 saveData(); 
                 buyOrSelect(id, 0); 
             } 
@@ -221,17 +229,18 @@
             canvas.height = window.innerHeight; 
         } 
 
-        function drawBuddy() { 
+        function drawBuddy(state = 'normal') { 
             ctx.save(); 
             ctx.translate(buddy.x, buddy.y); 
+            if (state === 'shock') ctx.translate(Math.random()*10-5, Math.random()*10-5);
             ctx.rotate(buddy.rotation); 
             ctx.shadowBlur = 15; ctx.shadowColor = "rgba(255,255,255,0.1)"; 
 
-            ctx.fillStyle = "white"; 
+            ctx.fillStyle = state === 'dead' ? "#333" : "white"; 
             ctx.fillRect(-25, -40, 50, 80); 
             ctx.beginPath(); 
             ctx.arc(0, -65, 25, 0, Math.PI * 2); 
-            ctx.fillStyle = "#ffdbac"; 
+            ctx.fillStyle = state === 'dead' ? "#444" : "#ffdbac"; 
             ctx.fill(); 
             ctx.strokeStyle = "#fff"; 
             ctx.lineWidth = 3; 
@@ -257,54 +266,65 @@
             ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(mouse.x, mouse.y, 2, 0, Math.PI*2); ctx.fill(); 
         } 
 
-        function update() { 
-            if (!gameActive) return; 
-            if (!isDragging) { 
-                buddy.vy += 0.9;  
-                buddy.x += buddy.vx; 
-                buddy.y += buddy.vy; 
-                buddy.rotation += buddy.rv; 
-
-                buddy.vx *= 0.985; 
-                buddy.vy *= 0.985; 
-                buddy.rv *= 0.96; 
-
-                if (buddy.y > canvas.height - 80) { 
-                    buddy.y = canvas.height - 80; 
-                    buddy.vy *= -0.5; 
-                    buddy.rv += buddy.vx * 0.01; 
-                } 
-                if (buddy.x < 50) { buddy.x = 50; buddy.vx *= -0.6; } 
-                if (buddy.x > canvas.width - 50) { buddy.x = canvas.width - 50; buddy.vx *= -0.6; } 
-            } 
-        } 
-
         function animate() { 
-            let grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width); 
-            grad.addColorStop(0, "#1a0510"); 
-            grad.addColorStop(0.5, "#050505"); 
-            grad.addColorStop(1, "#000000"); 
-            ctx.fillStyle = grad; 
+            bgHue = (bgHue + 0.5) % 360;
+            let intensity = Math.min(score / 1000000, 50);
+            ctx.fillStyle = `hsl(${bgHue}, ${20 + intensity}%, ${2 + intensity/10}%)`;
             ctx.fillRect(0, 0, canvas.width, canvas.height); 
 
-            ctx.strokeStyle = "rgba(255, 0, 60, 0.15)"; 
+            ctx.strokeStyle = `hsla(${bgHue}, 100%, 50%, 0.1)`; 
             ctx.lineWidth = 1; 
             for(let i=0; i<canvas.width; i+=100) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke(); } 
             for(let i=0; i<canvas.height; i+=100) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke(); } 
 
-            update(); 
-            drawBuddy(); 
-            
+            if (gameActive) {
+                if (currentWeapon === 'electric_chair') {
+                    buddy.x = canvas.width/2; buddy.y = canvas.height/2 + 50;
+                    if (animTimer > 0) {
+                        animTimer--;
+                        ctx.strokeStyle = "cyan"; ctx.lineWidth = 3;
+                        for(let i=0; i<3; i++) { ctx.beginPath(); ctx.moveTo(buddy.x-30, buddy.y-100); ctx.lineTo(buddy.x-50+Math.random()*100, buddy.y-150+Math.random()*80); ctx.stroke(); }
+                        drawBuddy('shock');
+                    } else drawBuddy('normal');
+                } else if (currentWeapon === 'guillotine') {
+                    buddy.x = canvas.width/2; buddy.y = canvas.height - 100;
+                    if (animTimer > 0) {
+                        animTimer--;
+                        let bladePos = Math.min(250, (30-animTimer)*15);
+                        ctx.fillStyle = "silver"; ctx.fillRect(buddy.x-55, buddy.y-300+bladePos, 110, 40);
+                        drawBuddy(bladePos > 200 ? 'dead' : 'normal');
+                    } else { drawBuddy('normal'); }
+                } else if (currentWeapon === 'blackhole') {
+                    let orbit = Date.now() * 0.005;
+                    buddy.x = canvas.width/2 + Math.cos(orbit)*120;
+                    buddy.y = canvas.height/2 + Math.sin(orbit)*120;
+                    buddy.rotation += 0.2;
+                    ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height/2, 60, 0, Math.PI*2);
+                    ctx.fillStyle = "black"; ctx.fill();
+                    drawBuddy('shock');
+                } else {
+                    if (!isDragging) { 
+                        buddy.vy += 0.9; buddy.x += buddy.vx; buddy.y += buddy.vy; buddy.rotation += buddy.rv; 
+                        buddy.vx *= 0.985; buddy.vy *= 0.985; buddy.rv *= 0.96; 
+                        if (buddy.y > canvas.height - 80) { buddy.y = canvas.height - 80; buddy.vy *= -0.5; buddy.rv += buddy.vx * 0.01; } 
+                        if (buddy.x < 50) { buddy.x = 50; buddy.vx *= -0.6; } 
+                        if (buddy.x > canvas.width - 50) { buddy.x = canvas.width - 50; buddy.vx *= -0.6; } 
+                    } 
+                    drawBuddy('normal');
+                }
+            }
+
             hits.forEach((hit, i) => { 
                 ctx.globalAlpha = hit.life; 
-                ctx.font = "bold 50px Inter"; 
-                ctx.fillText(hit.icon, hit.x-25, hit.y+25); 
-                hit.life -= 0.04; 
+                ctx.fillStyle = "#0f0"; ctx.font = "bold 30px JetBrains Mono"; 
+                ctx.fillText("+€" + formatMoney(hit.gain), hit.x, hit.y); 
+                hit.y -= 2; hit.life -= 0.03; 
                 if(hit.life <= 0) hits.splice(i, 1); 
             }); 
             ctx.globalAlpha = 1; 
 
             drawCursor(); 
+            document.getElementById('score').innerText = `€ ${formatMoney(score)}`;
             requestAnimationFrame(animate); 
         } 
 
@@ -342,21 +362,18 @@
                 saveData(); 
             } else { 
                 const dist = Math.hypot(pos.x - buddy.x, pos.y - buddy.y); 
-                let reach = currentWeapon === 'nuke' || currentWeapon === 'blackhole' ? 400 : 180; 
+                let w = weapons[currentWeapon];
+                let reach = w.cat === 'torture' ? 9999 : (currentWeapon === 'nuke' ? 400 : 180); 
                 
                 if (dist < reach) { 
-                    let w = weapons[currentWeapon]; 
                     score += w.gain; 
-                    document.getElementById('score').innerText = `€ ${score.toLocaleString()}`; 
-                    hits.push({ x: pos.x, y: pos.y, icon: w.icon, life: 1 }); 
-                    
+                    animTimer = 30;
+                    hits.push({ x: pos.x, y: pos.y, gain: w.gain, life: 1 }); 
                     const angle = Math.atan2(buddy.y - pos.y, buddy.x - pos.x); 
-                    
-                    let force = w.power / (w.mass * 0.5 + 1);
+                    let force = w.power / (w.mass * 0.5 + 1); 
                     buddy.vx += Math.cos(angle) * force; 
                     buddy.vy += Math.sin(angle) * force;  
                     buddy.rv = (Math.random()-0.5) * (force / 5); 
-                    
                     saveData(); 
                 } 
                 isDragging = false; 
